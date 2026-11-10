@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sorteo - F1 Bilbao</title>
+<link rel="icon" href="img/logo.svg" type="image/svg+xml">
+<link rel="stylesheet" href="estilos.css">
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+<header>
+<div class="logo"><a href="index.html"><img src="img/logo.svg" alt="Logo F1 Bilbao" width="40" height="40">F1 <span>BILBAO</span></a></div>
+<button class="menu-toggle" id="menu-toggle" aria-label="Abrir menú"><span></span><span></span><span></span></button>
+<nav id="nav-menu"><ul>
+<li><a href="#">La carrera</a><ul class="submenu"><li><a href="#">Circuito</a></li><li><a href="#">Escuderías</a></li><li><a href="#">Horarios</a></li></ul></li>
+<li><a href="#">Bilbao</a><ul class="submenu"><li><a href="#">Visítanos</a></li><li><a href="#">Gastronomía</a></li><li><a href="#">Alojamiento</a></li></ul></li>
+<li><a href="#">Entradas</a><ul class="submenu"><li><a href="entradas.html">Solo Carrera</a></li><li><a href="acceso.html">Acceso</a></li></ul></li>
+<li><a href="sorteo.html">Sorteo Tres primeros pilotos</a></li>
+<li><a href="contacto.html">Contacto</a></li></ul></nav>
+</header>
+
+<div class="main-container centrado"><main class="estrecho" style="text-align:center;max-width:760px">
+<h2>Sorteo Podio F1 Bilbao</h2>
+<p>Elige los tres pilotos que crees que subirán al podio, en orden (1º, 2º y 3º), sin repetir. Al pulsar el botón se sortea un podio al azar: cada puesto acertado tiene premio.</p>
+<p><strong>Premios:</strong> 1º puesto 5.000 € · 2º puesto 3.000 € · 3º puesto 1.000 €</p>
+<div class="selectores">
+<div><label for="puesto1">1º Puesto</label><select id="puesto1"></select></div>
+<div><label for="puesto2">2º Puesto</label><select id="puesto2"></select></div>
+<div><label for="puesto3">3º Puesto</label><select id="puesto3"></select></div>
+</div>
+<button type="button" id="btn-sorteo">Comprobar sorteo</button>
+<div id="resultado-sorteo"></div>
+</main></div>
+<footer>
+<p>F1® y FORMULA 1® son marcas registradas de Formula One Licensing BV. Bilbao® es marca del Ayuntamiento de Bilbao.<br>
+&copy; 2026 Formula One Licensing BV &amp; Ayuntamiento de Bilbao. Todos los derechos reservados. |
+<a href="#">Política de Cookies</a> | <a href="#">Política de Privacidad</a></p>
+<div class="social-icons">
+<a href="https://x.com/F1" target="_blank" rel="noopener" aria-label="X">𝕏 X</a>
+<a href="https://www.instagram.com/f1/" target="_blank" rel="noopener" aria-label="Instagram">📷 IG</a>
+<a href="https://www.youtube.com/@Formula1" target="_blank" rel="noopener" aria-label="YouTube">▶️ YT</a>
+</div></footer>
+<script src="codigo.js"></script>
+</body>
+</html>

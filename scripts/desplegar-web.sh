@@ -1,0 +1,62 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+if [[ $# -ne 2 ]]; then
+  printf 'Uso: DOCKERHUB_USER=<usuario> %s <grupo> <version: 1.0 o 2.0>\n' "$0" >&2
+  exit 2
+fi
+
+group="$1"
+version="$2"
+dockerhub_user="${DOCKERHUB_USER:-}"
+if [[ ! "$group" =~ ^[0-9]+$ ]]; then
+  printf 'Error: el grupo debe ser numérico.\n' >&2
+  exit 2
+fi
+if [[ ! "$version" =~ ^(1\.0|2\.0)$ ]]; then
+  printf 'Error: la versión debe ser 1.0 o 2.0.\n' >&2
+  exit 2
+fi
+if [[ ! "$dockerhub_user" =~ ^[a-z0-9][a-z0-9_-]*$ ]]; then
+  printf 'Error: define DOCKERHUB_USER con tu usuario de Docker Hub.\n' >&2
+  exit 2
+fi
+command -v docker >/dev/null || {
+  printf 'Error: Docker no está instalado o no está en PATH.\n' >&2
+  exit 1
+}
+
+swarm_status="$(docker info --format '{{.Swarm.LocalNodeState}} {{.Swarm.ControlAvailable}}')"
+if [[ "$swarm_status" != "active true" ]]; then
+  printf 'Error: este host no es un manager activo de Docker Swarm (estado: %s).\n' "$swarm_status" >&2
+  exit 1
+fi
+
+network="red-g${group}"
+service="web-f1-g${group}"
+network_type="$(docker network inspect --format '{{.Scope}}/{{.Driver}}' "$network")"
+if [[ "$network_type" != "swarm/overlay" ]]; then
+  printf 'Error: la red %s debe ser overlay de ámbito swarm (detectada: %s).\n' "$network" "$network_type" >&2
+  exit 1
+fi
+
+image="docker.io/${dockerhub_user}/f1-bilbao:${version}"
+if docker service ls --format '{{.Name}}' | grep -Fxq "$service"; then
+  docker service update \
+    --image "$image" \
+    --replicas 4 \
+    --with-registry-auth \
+    "$service"
+else
+  docker service create \
+    --name "$service" \
+    --replicas 4 \
+    --publish published=80,target=80,mode=ingress \
+    --network "$network" \
+    --with-registry-auth \
+    "$image"
+fi
+
+printf '\nEstado del servicio:\n'
+docker service ls --filter "name=^${service}$"
+docker service ps "$service"

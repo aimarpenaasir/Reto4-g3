@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Comprar Entradas - F1 Bilbao</title>
+<link rel="icon" href="img/logo.svg" type="image/svg+xml">
+<link rel="stylesheet" href="estilos.css">
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+<header>
+<div class="logo"><a href="index.html"><img src="img/logo.svg" alt="Logo F1 Bilbao" width="40" height="40">F1 <span>BILBAO</span></a></div>
+<button class="menu-toggle" id="menu-toggle" aria-label="Abrir menú"><span></span><span></span><span></span></button>
+<nav id="nav-menu"><ul>
+<li><a href="#">La carrera</a><ul class="submenu"><li><a href="#">Circuito</a></li><li><a href="#">Escuderías</a></li><li><a href="#">Horarios</a></li></ul></li>
+<li><a href="#">Bilbao</a><ul class="submenu"><li><a href="#">Visítanos</a></li><li><a href="#">Gastronomía</a></li><li><a href="#">Alojamiento</a></li></ul></li>
+<li><a href="#">Entradas</a><ul class="submenu"><li><a href="entradas.html">Solo Carrera</a></li><li><a href="acceso.html">Acceso</a></li></ul></li>
+<li><a href="sorteo.html">Sorteo Tres primeros pilotos</a></li>
+<li><a href="contacto.html">Contacto</a></li></ul></nav>
+</header>
+
+<div class="main-container centrado"><main class="estrecho">
+<h2>Adquisición de Entradas</h2>
+<form id="form-entradas" action="tratarDatos.php" method="POST" novalidate>
+<label for="dni">DNI:</label>
+<input type="text" id="dni" name="dni" placeholder="12345678Z" maxlength="9" autocomplete="off"><span id="err-dni" class="error-msg"></span>
+<label for="nombre">Nombre:</label>
+<input type="text" id="nombre" name="nombre"><span id="err-nombre" class="error-msg"></span>
+<label for="apellidos">Apellidos:</label>
+<input type="text" id="apellidos" name="apellidos"><span id="err-apellidos" class="error-msg"></span>
+<label for="email">Email:</label>
+<input type="email" id="email" name="email"><span id="err-email" class="error-msg"></span>
+<label for="tipo-entrada">Tipo de entrada:</label>
+<select id="tipo-entrada" name="tipo_entrada"><option value="adulto">Adulto</option><option value="infantil">Infantil</option></select>
+<label for="zona">Zona:</label>
+<select id="zona" name="zona"><option value="zona1">Zona 1</option><option value="zona2">Zona 2</option></select>
+<label for="edad">Edad:</label>
+<input type="number" id="edad" name="edad" min="0" max="120"><span id="err-edad" class="error-msg"></span>
+<button type="button" id="btn-calcular">Calcular precio</button>
+<label for="precio" style="margin-top:20px">Precio (€):</label>
+<input type="text" id="precio" disabled><span id="err-precio" class="error-msg"></span>
+<input type="hidden" id="precio-hidden" name="precio">
+<div class="condiciones"><strong>Condiciones de compraventa:</strong><br>
+1. Las entradas son personales e intransferibles.<br>
+2. No se admiten devoluciones una vez efectuada la compra.<br>
+3. El portador acepta las normas de seguridad del circuito urbano de Bilbao.<br>
+4. La organización se reserva el derecho de modificación de horarios.<br>
+5. Los menores de edad deberán acceder acompañados de un adulto.<br>
+6. Los datos personales se tratarán conforme a la Política de Privacidad.<br>
+7. La organización podrá denegar el acceso por motivos de seguridad.</div>
+<label class="check"><input type="checkbox" id="acepto-condiciones"> Acepto las condiciones del contrato</label>
+<button type="submit" id="btn-comprar" disabled>Comprar Entrada</button>
+</form></main></div>
+<footer>
+<p>F1® y FORMULA 1® son marcas registradas de Formula One Licensing BV. Bilbao® es marca del Ayuntamiento de Bilbao.<br>
+&copy; 2026 Formula One Licensing BV &amp; Ayuntamiento de Bilbao. Todos los derechos reservados. |
+<a href="#">Política de Cookies</a> | <a href="#">Política de Privacidad</a></p>
+<div class="social-icons">
+<a href="https://x.com/F1" target="_blank" rel="noopener" aria-label="X">𝕏 X</a>
+<a href="https://www.instagram.com/f1/" target="_blank" rel="noopener" aria-label="Instagram">📷 IG</a>
+<a href="https://www.youtube.com/@Formula1" target="_blank" rel="noopener" aria-label="YouTube">▶️ YT</a>
+</div></footer>
+<script src="codigo.js"></script>
+</body>
+</html>
