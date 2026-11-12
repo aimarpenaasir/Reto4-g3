@@ -1,82 +1,85 @@
-# Reto4-g3
-Proyecto Reto 4: web de F1 Bilbao desplegada en Docker Swarm sobre AWS.
+# CLOUD Reto 4 — F1 Bilbao en Docker Swarm
 
-## Fase 4: empaquetar y desplegar la web
+Proyecto académico para desplegar una web del evento F1 Bilbao en cuatro
+instancias EC2 de AWS, aprovisionadas con Terraform y organizadas como un
+clúster Docker Swarm. La arquitectura consta de un manager y tres workers; el
+servicio web se publica por HTTP en el puerto 80 y usa cuatro réplicas.
 
-El código común de la web está en `app/`; los inicios específicos de cada versión
-están en `app/1.0/` y `app/2.0/`. Su `Dockerfile` usa PHP con Apache porque
-`tratarDatos.php` procesa los formularios; así se sirven también las páginas HTML,
-el CSS, JavaScript, imágenes y el PDF.
+## Fases del proyecto
 
-### Publicar la imagen desde WSL
+- **Fase 0 — Entorno colaborativo:** GitHub, Codespace y herramientas de
+  Terraform/AWS CLI en `.devcontainer/`.
+- **Fase 1 — Infraestructura:** configuración de EC2, reglas de red, claves
+  públicas, arranque y outputs en `terraform/`.
+- **Fase 2 — Acceso remoto:** SSH a los nodos y salto a workers desde el manager.
+- **Fase 3 — Docker Swarm:** manager, workers y red ingress overlay del grupo.
+- **Fase 4 — Web:** imágenes versionadas, publicación en Docker Hub y servicio de
+  cuatro réplicas.
+- **Fase 5 — Pruebas:** balanceo, escalado, recuperación, mantenimiento,
+  actualizaciones y alta disponibilidad.
 
-Instala Docker en WSL si todavía no lo tienes y asegúrate de que el servicio de
-Docker está iniciado. Desde la raíz del repositorio, inicia sesión en Docker Hub:
+## Estructura principal
 
-```bash
-docker login --username TU_USUARIO_DOCKERHUB
-```
+- `terraform/`: infraestructura AWS como código.
+- `app/`: web, Dockerfile y páginas específicas de las versiones `1.0` y `2.0`.
+- `scripts/`: publicación de imágenes y despliegue del servicio Swarm.
+- `.devcontainer/`: definición del entorno de Codespaces.
+- `config/`: plantilla de configuración SSH.
+- `diagramas/`: diagrama de arquitectura.
+- `evidencias/`: capturas comentadas de las pruebas.
+- `PROYECTO.md`: procedimiento técnico y evidencias pendientes de adjuntar.
+- `GESTION.md`: plantilla de reparto de tareas del equipo.
+- `practica-individual/`: plantilla para documentar la práctica individual.
 
-Docker solicitará la contraseña o token de forma interactiva. No lo escribas en
-un comando ni lo guardes en el repositorio. Publica el código actual como versión
-1.0:
+La documentación y los campos marcados como pendientes deben completarse con
+los datos reales del equipo y las capturas obtenidas durante las pruebas.
 
-```bash
-bash scripts/publicar-web.sh TU_USUARIO_DOCKERHUB 1.0
-```
+## Despliegue rápido de la web
 
-La versión 2.0 ya incluye una nota visible sobre la consulta de nodos del clúster.
-Para publicarla:
+Requisitos: Docker disponible en WSL, acceso a Docker Hub, clúster Swarm activo
+con manager `manager-g3` y red ingress `red-g3`. Los comandos siguientes usan el
+grupo 3; adapta el número y los nombres si el grupo cambia.
 
-```bash
-bash scripts/publicar-web.sh TU_USUARIO_DOCKERHUB 2.0
-```
+1. Desde la raíz del repositorio, inicia sesión y publica la imagen que quieras:
 
-El script construye para `linux/amd64`, arquitectura de las instancias EC2 de este
-proyecto. El Dockerfile selecciona `app/<version>/index.html`, comparte el resto
-de recursos y establece la misma versión en la imagen; después publica
-`TU_USUARIO_DOCKERHUB/f1-bilbao` con la etiqueta indicada. Ambas páginas muestran
-la versión y el hostname del contenedor que responde. En 2.0, ese dato se
-actualiza cada dos segundos para observar el balanceo.
+   ```bash
+   docker login --username aimar06
+   bash scripts/publicar-web.sh aimar06 1.0
+   # Para publicar la versión 2.0:
+   bash scripts/publicar-web.sh aimar06 2.0
+   ```
 
-### Desplegar cuatro réplicas desde el manager
+   Docker solicita la contraseña o el token de forma interactiva. No incluyas
+   credenciales en comandos, archivos del repositorio ni capturas.
 
-Desde WSL, copia el script al manager y conéctate:
+2. Copia el script al manager y conéctate:
 
-```bash
-scp scripts/desplegar-web.sh manager-g3:/tmp/desplegar-web.sh
-ssh manager-g3
-```
+   ```bash
+   scp scripts/desplegar-web.sh manager-g3:/tmp/desplegar-web.sh
+   ssh manager-g3
+   ```
 
-En el manager, inicia sesión en Docker Hub y despliega la versión 1.0:
+3. En el manager, despliega o actualiza el servicio:
 
-```bash
-docker login --username TU_USUARIO_DOCKERHUB
-DOCKERHUB_USER=TU_USUARIO_DOCKERHUB bash /tmp/desplegar-web.sh 3 1.0
-```
+   ```bash
+   docker login --username aimar06
+   DOCKERHUB_USER=aimar06 bash /tmp/desplegar-web.sh 3 1.0
+   # Para actualizar a 2.0:
+   DOCKERHUB_USER=aimar06 bash /tmp/desplegar-web.sh 3 2.0
+   ```
 
-El script verifica que el nodo sea un manager activo y que `red-g3` sea la red
-ingress overlay de Swarm. Al publicar el puerto 80 en modo ingress, Swarm conecta
-el servicio a esa red automáticamente; no debe añadirse con `--network`. Crea
-`web-f1-g3` con cuatro réplicas, política de reinicio automático y actualizaciones
-`start-first` con rollback automático ante fallos. Al publicar una versión
-posterior, copia de nuevo el script si ha cambiado y ejecuta:
+4. Comprueba las réplicas y la versión servida:
 
-```bash
-DOCKERHUB_USER=TU_USUARIO_DOCKERHUB bash /tmp/desplegar-web.sh 3 2.0
-```
+   ```bash
+   docker service ls
+   docker service ps web-f1-g3
+   curl -sS http://IP_PUBLICA_DE_UN_NODO/estado.php
+   ```
 
-### Comprobar
+   Espera a que el servicio muestre `4/4` réplicas y las tareas estén en estado
+   `Running`. La página está disponible en `http://IP_PUBLICA_DE_CUALQUIER_NODO`.
 
-En el manager:
+## Enlaces
 
-```bash
-docker service ls
-docker service ps web-f1-g3
-curl -sS http://IP_PUBLICA_DE_CUALQUIER_NODO/estado.php
-```
-
-Espera a que las cuatro tareas estén en estado `Running`, y abre
-`http://IP_PUBLICA_DE_CUALQUIER_NODO` en el navegador. El grupo de seguridad debe
-permitir tráfico entrante al puerto 80. La respuesta JSON de `estado.php` permite
-comprobar la versión y el hostname que atendieron esa solicitud.
+- [Repositorio GitHub](https://github.com/aimarpenaasir/Reto4-g3)
+- [Imágenes F1 Bilbao en Docker Hub](https://hub.docker.com/r/aimar06/f1-bilbao)
