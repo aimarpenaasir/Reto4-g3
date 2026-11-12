@@ -5,6 +5,26 @@ $(document).ready(function () {
     // Los enlaces "#" no deben saltar al inicio de la página
     $('a[href="#"]').click(function (e) { e.preventDefault(); });
 
+    // La versión 2.0 actualiza periódicamente la instancia que responde.
+    const estadoDespliegue = $('#estado-despliegue');
+    if (estadoDespliegue.length) {
+        let sondeoIniciado = false;
+        function consultarEstado() {
+            $.ajax({ url: 'estado.php', dataType: 'json', cache: false })
+                .done(function (estado) {
+                    estadoDespliegue.text(`Versión ${estado.version} · Nodo: ${estado.hostname}`);
+                    if (estado.version === '2.0' && !sondeoIniciado) {
+                        sondeoIniciado = true;
+                        setInterval(consultarEstado, 2000);
+                    }
+                })
+                .fail(function () {
+                    estadoDespliegue.text('No se pudo consultar la versión y el nodo que respondieron.');
+                });
+        }
+        consultarEstado();
+    }
+
     // 1. SUBMENÚS: hover en escritorio, clic en móvil
     $('nav > ul > li').hover(
         function () { if (!esMovil()) $(this).children('.submenu').stop(true, true).slideDown(200); },

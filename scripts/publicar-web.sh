@@ -26,6 +26,7 @@ image="docker.io/${dockerhub_user}/f1-bilbao:${version}"
 
 docker build \
   --platform linux/amd64 \
+  --build-arg "APP_VERSION=$version" \
   --tag "$image" \
   --file "$repo_root/app/Dockerfile" \
   "$repo_root/app"

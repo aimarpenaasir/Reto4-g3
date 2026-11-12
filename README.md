@@ -3,7 +3,8 @@ Proyecto Reto 4: web de F1 Bilbao desplegada en Docker Swarm sobre AWS.
 
 ## Fase 4: empaquetar y desplegar la web
 
-El código de la web está en `app/`. Su `Dockerfile` usa PHP con Apache porque
+El código común de la web está en `app/`; los inicios específicos de cada versión
+están en `app/1.0/` y `app/2.0/`. Su `Dockerfile` usa PHP con Apache porque
 `tratarDatos.php` procesa los formularios; así se sirven también las páginas HTML,
 el CSS, JavaScript, imágenes y el PDF.
 
@@ -24,17 +25,19 @@ un comando ni lo guardes en el repositorio. Publica el código actual como versi
 bash scripts/publicar-web.sh TU_USUARIO_DOCKERHUB 1.0
 ```
 
-Para publicar la versión 2.0, primero realiza los cambios que distinguirán esa
-versión en `app/`, y después ejecuta:
+La versión 2.0 ya incluye una nota visible sobre la consulta de nodos del clúster.
+Para publicarla:
 
 ```bash
 bash scripts/publicar-web.sh TU_USUARIO_DOCKERHUB 2.0
 ```
 
 El script construye para `linux/amd64`, arquitectura de las instancias EC2 de este
-proyecto, y publica `TU_USUARIO_DOCKERHUB/f1-bilbao` con la etiqueta indicada.
-No publiques 2.0 hasta tener sus cambios; una etiqueta distinta por sí sola no
-crea una versión diferente.
+proyecto. El Dockerfile selecciona `app/<version>/index.html`, comparte el resto
+de recursos y establece la misma versión en la imagen; después publica
+`TU_USUARIO_DOCKERHUB/f1-bilbao` con la etiqueta indicada. Ambas páginas muestran
+la versión y el hostname del contenedor que responde. En 2.0, ese dato se
+actualiza cada dos segundos para observar el balanceo.
 
 ### Desplegar cuatro réplicas desde el manager
 
@@ -52,9 +55,12 @@ docker login --username TU_USUARIO_DOCKERHUB
 DOCKERHUB_USER=TU_USUARIO_DOCKERHUB bash /tmp/desplegar-web.sh 3 1.0
 ```
 
-El script verifica que el nodo sea un manager activo y que `red-g3` sea una red
-overlay. Crea `web-f1-g3` con cuatro réplicas, publicado en el puerto 80. Al
-publicar una versión posterior, copia de nuevo el script si ha cambiado y ejecuta:
+El script verifica que el nodo sea un manager activo y que `red-g3` sea la red
+ingress overlay de Swarm. Al publicar el puerto 80 en modo ingress, Swarm conecta
+el servicio a esa red automáticamente; no debe añadirse con `--network`. Crea
+`web-f1-g3` con cuatro réplicas, política de reinicio automático y actualizaciones
+`start-first` con rollback automático ante fallos. Al publicar una versión
+posterior, copia de nuevo el script si ha cambiado y ejecuta:
 
 ```bash
 DOCKERHUB_USER=TU_USUARIO_DOCKERHUB bash /tmp/desplegar-web.sh 3 2.0
@@ -67,8 +73,10 @@ En el manager:
 ```bash
 docker service ls
 docker service ps web-f1-g3
+curl -sS http://IP_PUBLICA_DE_CUALQUIER_NODO/estado.php
 ```
 
 Espera a que las cuatro tareas estén en estado `Running`, y abre
 `http://IP_PUBLICA_DE_CUALQUIER_NODO` en el navegador. El grupo de seguridad debe
-permitir tráfico entrante al puerto 80.
+permitir tráfico entrante al puerto 80. La respuesta JSON de `estado.php` permite
+comprobar la versión y el hostname que atendieron esa solicitud.

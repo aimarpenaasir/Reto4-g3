@@ -34,9 +34,9 @@ fi
 
 network="red-g${group}"
 service="web-f1-g${group}"
-network_type="$(docker network inspect --format '{{.Scope}}/{{.Driver}}' "$network")"
-if [[ "$network_type" != "swarm/overlay" ]]; then
-  printf 'Error: la red %s debe ser overlay de ámbito swarm (detectada: %s).\n' "$network" "$network_type" >&2
+network_type="$(docker network inspect --format '{{.Ingress}} {{.Scope}}/{{.Driver}}' "$network")"
+if [[ "$network_type" != "true swarm/overlay" ]]; then
+  printf 'Error: la red %s debe ser la red ingress overlay de Swarm (detectada: %s).\n' "$network" "$network_type" >&2
   exit 1
 fi
 
@@ -46,17 +46,34 @@ if docker service ls --format '{{.Name}}' | grep -Fxq "$service"; then
     --image "$image" \
     --replicas 4 \
     --with-registry-auth \
+    --restart-condition any \
+    --restart-delay 5s \
+    --update-order start-first \
+    --update-parallelism 1 \
+    --update-delay 5s \
+    --update-monitor 30s \
+    --update-failure-action rollback \
+    --rollback-order start-first \
+    --rollback-parallelism 1 \
     "$service"
 else
   docker service create \
     --name "$service" \
     --replicas 4 \
     --publish published=80,target=80,mode=ingress \
-    --network "$network" \
     --with-registry-auth \
+    --restart-condition any \
+    --restart-delay 5s \
+    --update-order start-first \
+    --update-parallelism 1 \
+    --update-delay 5s \
+    --update-monitor 30s \
+    --update-failure-action rollback \
+    --rollback-order start-first \
+    --rollback-parallelism 1 \
     "$image"
 fi
 
 printf '\nEstado del servicio:\n'
-docker service ls --filter "name=^${service}$"
+docker service ls --filter "name=${service}"
 docker service ps "$service"
