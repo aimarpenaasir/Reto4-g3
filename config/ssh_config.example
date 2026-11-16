@@ -2,28 +2,28 @@
 # Restringe los permisos del archivo local: chmod 600 ~/.ssh/config
 
 Host manager-g3
-    HostName <IP_PUBLICA_MANAGER>
+    HostName <IP_PUBLICA_MANAGER> # Esta IP publica cambia cada vez que se apaga y enziende el laboratorio asi que hay que estar cambiandola.
     User ubuntu
-    IdentityFile ~/.ssh/<CLAVE_PRIVADA_ALUMNO>
+    IdentityFile ~/.ssh/id_aimar # Aqui hay que ponder la ruta de donde este situada tu clave privada.
     IdentitiesOnly yes
 
 Host worker1-g3
-    HostName <IP_PRIVADA_WORKER1>
+    HostName 172.31.24.135
     User ubuntu
-    IdentityFile ~/.ssh/<CLAVE_PRIVADA_ALUMNO>
+    IdentityFile ~/.ssh/id_aimar
     IdentitiesOnly yes
     ProxyJump manager-g3
 
 Host worker2-g3
-    HostName <IP_PRIVADA_WORKER2>
+    HostName 172.31.20.206
     User ubuntu
-    IdentityFile ~/.ssh/<CLAVE_PRIVADA_ALUMNO>
+    IdentityFile ~/.ssh/id_aimar
     IdentitiesOnly yes
     ProxyJump manager-g3
 
 Host worker3-g3
-    HostName <IP_PRIVADA_WORKER3>
+    HostName 172.31.25.44
     User ubuntu
-    IdentityFile ~/.ssh/<CLAVE_PRIVADA_ALUMNO>
+    IdentityFile ~/.ssh/id_aimar
     IdentitiesOnly yes
     ProxyJump manager-g3

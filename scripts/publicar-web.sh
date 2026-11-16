@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
+# Validar que se reciben el usuario de Docker Hub y la versión de la aplicación.
 if [[ $# -ne 2 ]]; then
   printf 'Uso: %s <usuario-docker-hub> <version: 1.0 o 2.0>\n' "$0" >&2
   exit 2
@@ -8,6 +9,8 @@ fi
 
 dockerhub_user="$1"
 version="$2"
+
+# Limitar los valores aceptados para evitar etiquetas o repositorios incorrectos.
 if [[ ! "$dockerhub_user" =~ ^[a-z0-9][a-z0-9_-]*$ ]]; then
   printf 'Error: el usuario de Docker Hub no tiene un formato válido.\n' >&2
   exit 2
@@ -21,6 +24,7 @@ command -v docker >/dev/null || {
   exit 1
 }
 
+# Construir la imagen para la arquitectura de los nodos EC2 y publicarla.
 repo_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 image="docker.io/${dockerhub_user}/f1-bilbao:${version}"
 

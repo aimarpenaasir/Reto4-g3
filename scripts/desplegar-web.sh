@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
+# Recibir el grupo y la versión que se desplegará en el servicio Swarm.
 if [[ $# -ne 2 ]]; then
   printf 'Uso: DOCKERHUB_USER=<usuario> %s <grupo> <version: 1.0 o 2.0>\n' "$0" >&2
   exit 2
@@ -9,6 +10,8 @@ fi
 group="$1"
 version="$2"
 dockerhub_user="${DOCKERHUB_USER:-}"
+
+# Validar los parámetros antes de ejecutar cambios en el clúster.
 if [[ ! "$group" =~ ^[0-9]+$ ]]; then
   printf 'Error: el grupo debe ser numérico.\n' >&2
   exit 2
@@ -26,6 +29,7 @@ command -v docker >/dev/null || {
   exit 1
 }
 
+# El despliegue solo se permite desde un manager activo.
 swarm_status="$(docker info --format '{{.Swarm.LocalNodeState}} {{.Swarm.ControlAvailable}}')"
 if [[ "$swarm_status" != "active true" ]]; then
   printf 'Error: este host no es un manager activo de Docker Swarm (estado: %s).\n' "$swarm_status" >&2
@@ -34,6 +38,8 @@ fi
 
 network="red-g${group}"
 service="web-f1-g${group}"
+
+# Comprobar que la red del grupo es la red ingress overlay de Swarm.
 network_type="$(docker network inspect --format '{{.Ingress}} {{.Scope}}/{{.Driver}}' "$network")"
 if [[ "$network_type" != "true swarm/overlay" ]]; then
   printf 'Error: la red %s debe ser la red ingress overlay de Swarm (detectada: %s).\n' "$network" "$network_type" >&2
@@ -41,6 +47,8 @@ if [[ "$network_type" != "true swarm/overlay" ]]; then
 fi
 
 image="docker.io/${dockerhub_user}/f1-bilbao:${version}"
+
+# Actualizar el servicio existente o crearlo con cuatro réplicas.
 if docker service ls --format '{{.Name}}' | grep -Fxq "$service"; then
   docker service update \
     --image "$image" \
@@ -74,6 +82,7 @@ else
     "$image"
 fi
 
+# Mostrar el estado final para comprobar la convergencia del despliegue.
 printf '\nEstado del servicio:\n'
 docker service ls --filter "name=${service}"
 docker service ps "$service"

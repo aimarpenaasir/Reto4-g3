@@ -27,8 +27,8 @@ git status --short --branch
 
 **Evidencias por añadir**
 
-- [PENDIENTE] Captura del Codespace creado y con AWS CLI/Terraform disponibles.
-- [PENDIENTE] Captura de Settings mostrando repositorio privado y colaboradores,
+- [PENDIENTE]![alt text](image-2.png) Captura del Codespace creado y con AWS CLI/Terraform disponibles.
+- [PENDIENTE]![alt text](image-1.png) Captura de Settings mostrando repositorio privado y colaboradores,
   sin exponer información que no deba publicarse.
 - [PENDIENTE] Historial de commits y PRs de los integrantes.
 
@@ -53,8 +53,8 @@ cd terraform
 terraform fmt -check
 terraform init
 terraform validate
-terraform plan -var='ip_ssh=<IP_PUBLICA_AULA_O_ALUMNO>/32'
-terraform apply -var='ip_ssh=<IP_PUBLICA_AULA_O_ALUMNO>/32'
+terraform plan
+terraform apply
 terraform output
 ```
 

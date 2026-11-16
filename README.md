@@ -31,8 +31,6 @@ servicio web se publica por HTTP en el puerto 80 y usa cuatro réplicas.
 - `GESTION.md`: plantilla de reparto de tareas del equipo.
 - `practica-individual/`: plantilla para documentar la práctica individual.
 
-La documentación y los campos marcados como pendientes deben completarse con
-los datos reales del equipo y las capturas obtenidas durante las pruebas.
 
 ## Despliegue rápido de la web
 

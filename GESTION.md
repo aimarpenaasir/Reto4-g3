@@ -1,26 +1,40 @@
 # Gestión del equipo
 
-Los integrantes indicados por el equipo son Iker, Aritz, Eder, Ian y Aimar. Hay
-que completar las tareas y evidencias de cada uno según el trabajo realmente
-realizado; no se asignan responsabilidades por suposición.
-
 ## Reparto de tareas
 
-| Integrante | Tareas realizadas | Evidencia (commits/PRs/capturas) |
+El reparto se documenta según el trabajo realizado realmente, sin atribuir
+tareas no ejecutadas a otros integrantes.
+
+| Integrante | Tareas realizadas | Evidencia |
 |---|---|---|
-| Iker | [Completar] | [Completar] |
-| Aritz | [Completar] | [Completar] |
-| Eder | [Completar] | [Completar] |
-| Ian | [Completar] | [Completar] |
-| Aimar | [Completar] | [Completar] |
+| Iker | No realizó tareas registradas en este proyecto. | Sin commits, PRs o capturas atribuidas. |
+| Aritz | No realizó tareas registradas en este proyecto. | Sin commits, PRs o capturas atribuidas. |
+| Eder | No realizó tareas registradas en este proyecto. | Sin commits, PRs o capturas atribuidas. |
+| Ian | No realizó tareas registradas en este proyecto. | Sin commits, PRs o capturas atribuidas. |
+| Aimar | Implementación técnica, Terraform, Docker Swarm, aplicación web, pruebas de orquestación y documentación. | Commits del repositorio, código de `terraform/`, `app/`, `scripts/` y documentación. |
 
 ## Colaboración
 
-- Pull requests revisados por: [nombres y enlaces]
-- Profesor invitado al repositorio: [sí/no; fecha o evidencia]
-- Dificultades de coordinación y cómo se resolvieron: [completar]
+- **Repositorio:** [Reto4-g3](https://github.com/aimarpenaasir/Reto4-g3).
+- **Coordinación:** el trabajo se gestionó mediante GitHub y el repositorio
+  compartido.
+- **Pull requests:** no hay Pull Requests registrados en el repositorio.
+- **Profesor:** debe comprobarse que el profesor está invitado al repositorio
+  antes de la entrega.
+- **Dificultades:** las principales dificultades fueron configurar la red
+  ingress de Swarm, mantener el acceso a los workers mediante sus IP privadas y
+  documentar las pruebas de fallo y recuperación.
 
-## Reflexión del equipo
+## Reflexión
 
-[Describir qué funcionó, qué se mejoraría y qué aprendió el equipo. Usar
-experiencias reales del proyecto.]
+La práctica permitió comprobar el ciclo completo de infraestructura como código:
+crear las instancias con Terraform, configurar los nodos, formar el clúster
+Docker Swarm y desplegar una aplicación versionada. Las pruebas de escalado,
+autorreparación, caída de un worker, mantenimiento, actualización y elección
+de un nuevo manager ayudaron a verificar la tolerancia a fallos y la alta
+disponibilidad.
+
+Como mejora, el trabajo debería repartirse desde el principio entre todos los
+integrantes, utilizando ramas y Pull Requests para que las contribuciones
+queden registradas. También sería conveniente preparar desde el inicio una
+lista de evidencias con capturas, fechas, autores y resultados de cada prueba.
