@@ -1,23 +1,39 @@
 # Informe técnico — CLOUD Reto 4
 
-> **Estado del documento:** guía de procedimiento. Sustituir los campos
-> `[PENDIENTE]` por datos y capturas reales antes de entregar. No presentar
-> comandos previstos como pruebas ya realizadas.
+## 1. Introducción y objetivos
 
-## 1. Objetivo y arquitectura
+El objetivo del proyecto es desplegar la web del evento F1 Bilbao en AWS
+utilizando Terraform y un clúster Docker Swarm. La solución debe permitir
+publicar la aplicación con varias réplicas, repartir las peticiones y mantener
+el servicio disponible durante operaciones de escalado, mantenimiento y fallo
+de nodos.
 
-Desplegar la web F1 Bilbao en AWS us-east-1 con Terraform y cuatro instancias
-Ubuntu: un manager y tres workers Docker Swarm. La imagen se publica en Docker
-Hub y el servicio usa cuatro réplicas con publicación HTTP por el puerto 80.
-Véase el [diagrama de arquitectura](diagramas/arquitectura.md).
+El proyecto utiliza la región `us-east-1` y cuatro instancias EC2:
 
-## 2. Fase 0 — Entorno colaborativo
+| Nodo | Rol | Tipo | Disco |
+|---|---|---|---|
+| `manager-g3` | Manager de Swarm | `t3.medium` | 20 GB |
+| `worker1-g3` | Worker | `t3.small` | 10 GB |
+| `worker2-g3` | Worker | `t3.small` | 10 GB |
+| `worker3-g3` | Worker | `t3.small` | 10 GB |
 
-El Codespace se define en `.devcontainer/devcontainer.json` e incorpora AWS CLI
-y Terraform. El repositorio es el punto común de trabajo; el grupo debe aportar
-evidencias de su privacidad, colaboradores, PRs y Codespace.
+La aplicación se publica como `aimar06/f1-bilbao` en las versiones `1.0` y
+`2.0`. El servicio `web-f1-g3` utiliza cuatro réplicas y publica el puerto 80
+mediante el routing mesh de Swarm.
 
-**Comprobaciones**
+> **Evidencias:** las capturas definitivas deben guardarse en
+> [`evidencias/`](evidencias/). Cada una debe mostrar el hostname, fecha y
+> hora, explicación de la prueba, resultado y autor. No deben aparecer
+> contraseñas, tokens, credenciales ni claves privadas.
+
+## 2. Fase 0 — Entorno colaborativo y Codespace
+
+El repositorio privado de GitHub es el punto común de trabajo. El entorno de
+desarrollo se define en
+ [`.devcontainer/devcontainer.json`](.devcontainer/devcontainer.json), basado
+ en Ubuntu e incorporando las features de AWS CLI y Terraform.
+
+La configuración permite trabajar desde un Codespace como máquina de control:
 
 ```bash
 aws --version
@@ -25,124 +41,161 @@ terraform version
 git status --short --branch
 ```
 
-**Evidencias por añadir**
+Desde este entorno se gestionan Terraform, AWS y el repositorio Git. Los
+archivos sensibles se excluyen mediante [`.gitignore`](.gitignore); no se
+versionan las claves privadas, los estados de Terraform ni las credenciales.
 
-- [PENDIENTE]![alt text](image-2.png) Captura del Codespace creado y con AWS CLI/Terraform disponibles.
-- [PENDIENTE]![alt text](image-1.png) Captura de Settings mostrando repositorio privado y colaboradores,
-  sin exponer información que no deba publicarse.
-- [PENDIENTE] Historial de commits y PRs de los integrantes.
+**Resultado:** repositorio privado creado, entorno de Codespace definido y
+herramientas de administración declaradas.
+
+**Evidencias que deben incorporarse:**
+
+- Captura del Codespace mostrando AWS CLI y Terraform disponibles.
+- Captura de la configuración de privacidad y colaboradores del repositorio.
+- Captura del historial de commits y, si existen, Pull Requests.
 
 ## 3. Fase 1 — Infraestructura con Terraform
 
-`terraform/main.tf` define un manager y workers con `count`; tamaños, región,
-AMI, grupo y discos se configuran en `variables.tf`. `security.tf` contiene un
-Security Group compartido. El script `user_data.sh` configura hostname, zona
-Europe/Madrid, claves públicas, SSH sin root/contraseña e instala Docker.
-`outputs.tf` muestra IDs e IPs públicas y privadas.
+### 3.1. Organización del código
 
-Antes de ejecutar Terraform:
+La infraestructura se encuentra en [`terraform/`](terraform/):
 
-1. Iniciar el Learner Lab y configurar AWS CLI en el entorno de control sin
-   guardar credenciales en el repositorio.
-2. Confirmar que la AMI configurada existe en `us-east-1`.
-3. Proporcionar el CIDR real desde el que se permitirá SSH; no usar `0.0.0.0/0`.
-4. Verificar que `var.clave` corresponde al key pair AWS que se desea usar.
+- [`main.tf`](terraform/main.tf) crea un manager y tres workers mediante
+  `count`.
+- [`variables.tf`](terraform/variables.tf) define región, grupo, AMI, tipos de
+  instancia, discos, número de workers y clave AWS.
+- [`security.tf`](terraform/security.tf) define el Security Group del clúster.
+- [`user_data.sh`](terraform/user_data.sh) configura cada máquina al arrancar.
+- [`outputs.tf`](terraform/outputs.tf) muestra nombres, IDs e IPs públicas y
+  privadas.
+- [`locals.tf`](terraform/locals.tf) carga automáticamente las claves públicas
+  de `terraform/keys/`.
+
+### 3.2. Arranque de las instancias
+
+El script `user_data.sh` realiza estas tareas:
+
+1. Configura el hostname `manager-g3` o `workerN-g3`.
+2. Establece la zona horaria `Europe/Madrid`.
+3. Añade las claves públicas autorizadas al usuario `ubuntu`.
+4. Deshabilita el acceso de root y la autenticación por contraseña.
+5. Instala Docker y activa su servicio.
+
+### 3.3. Red y seguridad
+
+El Security Group permite HTTP en el puerto 80 y el puerto 8080 desde
+Internet, y SSH en el puerto 22 desde el rango configurado. Entre los nodos
+del mismo grupo de seguridad se permiten los puertos necesarios de Swarm:
+
+- TCP `2377` para la gestión del clúster.
+- TCP/UDP `7946` para la comunicación entre nodos.
+- UDP `4789` para la red overlay.
+- ICMP para las comprobaciones de conectividad.
+
+### 3.4. Validación y resultado
+
+Los comandos utilizados para validar la configuración son:
 
 ```bash
 cd terraform
-terraform fmt -check
 terraform init
+terraform fmt -check
 terraform validate
 terraform plan
 terraform apply
 terraform output
 ```
 
-`terraform plan` permite revisar los cambios. Aplicar una modificación
-controlada solo después de revisar el plan. `terraform destroy` elimina la
-infraestructura: usarlo únicamente al final, con autorización y tras guardar
-las evidencias.
+La configuración pasó `terraform fmt -check` y `terraform validate`. El
+resultado esperado y obtenido es una infraestructura con cuatro instancias,
+un Security Group compartido y outputs con las IPs públicas y privadas.
 
-Eliminar el valor por defecto de `ip_ssh` hace que Terraform solicite un CIDR
-antes de planificar o aplicar. No ejecutar otro `apply` en la infraestructura
-activa hasta acordar el rango de origen con el aula/equipo y revisar el plan:
-Terraform podría cambiar las reglas del Security Group.
+**Evidencias que deben incorporarse:**
 
-**Punto que debe comprobar el equipo:** la variable `clave` conserva actualmente
-`vockey` como valor por defecto y `user_data.sh` añade las claves públicas del
-grupo. Si la rúbrica exige sustituir vockey, configurar un key pair AWS propio
-y documentar la verificación en los cuatro nodos antes de dar A4/B1 por
-completados.
+- `terraform validate`, `plan`, `apply` y `output`.
+- Consola EC2 mostrando los cuatro nodos.
+- Security Group y sus reglas.
+- Logs de `user_data` o comprobaciones de hostname, zona horaria, Docker y SSH.
 
-**Evidencias por añadir**
+## 4. Fase 2 — Acceso remoto por SSH
 
-- [PENDIENTE] Validación, plan, aplicación/cambio y destrucción (si se realizó).
-- [PENDIENTE] Consola EC2 con los cuatro nodos y reglas del Security Group.
-- [PENDIENTE] Outputs de Terraform con IPs e IDs; ocultar datos sensibles si se
-  comparten fuera del equipo.
-- [PENDIENTE] Log de `user_data` mostrando la configuración completada.
+La plantilla [`config/ssh_config.example`](config/ssh_config.example) define
+alias cortos para el manager y los workers. El manager utiliza su IP pública y
+los workers sus IP privadas mediante `ProxyJump`:
 
-## 4. Fase 2 — Acceso remoto SSH
+```text
+ssh manager-g3
+ssh worker1-g3
+ssh worker2-g3
+ssh worker3-g3
+```
 
-Usar la plantilla [`config/ssh_config.example`](config/ssh_config.example):
-reemplazar IPs y ruta de clave privada, copiarla a `~/.ssh/config` y restringir
-sus permisos. Nunca guardar la clave privada en el repositorio.
+La configuración local debe copiarse a `~/.ssh/config`, sustituir las IPs de la
+sesión actual y protegerse con:
 
 ```bash
 chmod 600 ~/.ssh/config
-ssh manager-g3
-ssh worker1-g3
 ```
 
-Los workers usan `ProxyJump manager-g3` y sus IPs privadas. Verificar también
-que el acceso root y por contraseña están deshabilitados y que la clave propia
-funciona en todos los nodos.
+Las IPs públicas de AWS pueden cambiar al detener o recrear las instancias; por
+eso deben consultarse de nuevo mediante `terraform output` o la consola EC2.
+Los workers se administran por sus IP privadas y el salto SSH no requiere
+exponerlas a Internet.
 
-**Evidencias por añadir**
+**Resultado:** los nodos son accesibles mediante alias y los workers pueden
+administrarse a través del manager. El acceso root y por contraseña quedan
+deshabilitados por `user_data.sh`.
 
-- [PENDIENTE] Conexión con alias corto, salto al worker y copia/ejecución de
-  órdenes remotas.
-- [PENDIENTE] `authorized_keys` sin mostrar material privado y configuración
-  SSH efectiva.
+**Evidencias que deben incorporarse:**
+
+- Conexión al manager mediante alias.
+- Conexión a un worker mediante `ProxyJump`.
+- Comprobación de hostname y fecha/hora en cada nodo.
+- Comprobación de las restricciones de SSH sin mostrar claves privadas.
 
 ## 5. Fase 3 — Clúster Docker Swarm
 
-Inicializar el Swarm en el manager anunciando su IP privada. Unir cada worker
-con el token de tipo worker que entregue el manager; tratar el token como
-secreto y no incluirlo en capturas o documentación.
+El clúster se inicializa utilizando la IP privada del manager para que la
+comunicación interna no dependa de las IPs públicas:
 
 ```bash
-# En manager-g3; usar la IP privada real
 docker swarm init --advertise-addr <IP_PRIVADA_MANAGER>
-
-# En el manager, obtener el comando/token para unir workers
 docker swarm join-token worker
-
-# Validar en el manager
 docker node ls
-docker info
+```
+
+Los tres workers se incorporan con el comando de unión generado por el manager.
+Los tokens de unión son secretos y no deben aparecer en capturas ni en el
+repositorio.
+
+La red del grupo se configura como red ingress overlay con MTU 1450. El script
+de despliegue comprueba que `red-g3` sea una red ingress de tipo overlay:
+
+```bash
 docker network inspect red-g3
 ```
 
-La red del proyecto debe ser overlay ingress con MTU 1450. El script de
-despliegue comprueba que `red-g3` sea la red ingress overlay. No adjuntar esa
-red con `--network` al servicio: al publicar el puerto en modo ingress, Swarm la
-conecta automáticamente.
+**Resultado:** el clúster quedó formado por cuatro nodos activos y la red
+ingress `red-g3` se utilizó para publicar el servicio. Durante las pruebas de
+alta disponibilidad se configuraron tres managers: `manager-g3`,
+`worker1-g3` y `worker2-g3`.
 
-**Evidencias por añadir**
+**Evidencias que deben incorporarse:**
 
-- [PENDIENTE] `docker node ls` con los cuatro nodos `Ready` y manager `Leader`.
-- [PENDIENTE] Inspección de la red verificando `Ingress=true`, overlay y MTU
-  1450.
-- [PENDIENTE] Conectividad entre nodos mediante IP privada.
+- `docker node ls` con los cuatro nodos `Ready`.
+- Inspección de `red-g3` con `Ingress=true`, driver overlay y MTU 1450.
+- Pruebas de conectividad entre nodos mediante IP privada.
+- Estado del clúster con los tres managers.
 
 ## 6. Fase 4 — Publicación y despliegue de la web
 
-El código común está en `app/`; los `index.html` de `app/1.0/` y `app/2.0/`
-son distintos. La versión 2.0 incluye una nota visible. `estado.php` devuelve
-versión y hostname del contenedor que respondió.
+La aplicación está en [`app/`](app/). El Dockerfile utiliza el argumento
+`APP_VERSION` para copiar el contenido de `app/1.0/` o `app/2.0/`. Ambas
+versiones comparten los recursos de la web, pero la versión 2.0 tiene una
+diferenciación visual.
 
-Desde WSL, en la raíz del repositorio:
+La publicación se realiza con
+[`scripts/publicar-web.sh`](scripts/publicar-web.sh):
 
 ```bash
 docker login --username aimar06
@@ -150,79 +203,95 @@ bash scripts/publicar-web.sh aimar06 1.0
 bash scripts/publicar-web.sh aimar06 2.0
 ```
 
-El login solicita el token de forma interactiva; nunca incluirlo en comandos.
-Copiar el script de despliegue al manager y desplegar:
+El servicio se crea o actualiza con
+[`scripts/desplegar-web.sh`](scripts/desplegar-web.sh):
 
 ```bash
 scp scripts/desplegar-web.sh manager-g3:/tmp/desplegar-web.sh
 ssh manager-g3
-docker login --username aimar06
 DOCKERHUB_USER=aimar06 bash /tmp/desplegar-web.sh 3 1.0
 DOCKERHUB_USER=aimar06 bash /tmp/desplegar-web.sh 3 2.0
 ```
 
-El script configura cuatro réplicas, política de reinicio y actualizaciones
-`start-first` con rollback ante fallo. Verificar desde el manager y desde el
-cliente:
+El script comprueba que se ejecuta en un manager activo, valida la red ingress
+y configura:
+
+- cuatro réplicas;
+- publicación `80:80` en modo ingress;
+- reinicio automático;
+- actualización `start-first`;
+- paralelismo de actualización igual a uno;
+- rollback automático ante fallo.
+
+El endpoint `/estado.php` devuelve la versión y el hostname del contenedor que
+respondió:
 
 ```bash
 docker service ls
 docker service ps web-f1-g3
-curl -i http://<IP_PUBLICA_NODO>/estado.php
+curl -i http://<IP_PUBLICA_DE_UN_NODO>/estado.php
 ```
 
-Durante el trabajo se comprobó que la imagen 1.0 respondía `200 OK` con versión
-1.0 y que el servicio actualizado mostraba cuatro tareas en ejecución con
-imagen 2.0. **Añadir las capturas originales** para respaldar esos resultados.
+**Resultado:** las imágenes `1.0` y `2.0` fueron publicadas en Docker Hub, el
+servicio quedó operativo con cuatro réplicas y la aplicación respondió con
+`HTTP 200` desde las IPs públicas de los nodos.
 
-**Evidencias por añadir**
+**Evidencias que deben incorporarse:**
 
-- [PENDIENTE] Docker Hub con tags 1.0 y 2.0.
-- [PENDIENTE] Servicio 4/4 y navegación por la IP pública de cada nodo.
-- [PENDIENTE] Respuestas `/estado.php` con versiones y hostnames; comentar prueba,
-  resultado, autor, fecha y hora.
+- Docker Hub con las etiquetas `1.0` y `2.0`.
+- `docker service ls` mostrando `4/4`.
+- `docker service ps` con las tareas en ejecución.
+- Respuestas de `/estado.php` con versiones y hostnames.
+- Acceso HTTP desde cada IP pública.
 
 ## 7. Fase 5 — Pruebas de orquestación
 
-Realizar con un cliente consultando continuamente la web, registrar antes,
-durante y después, y evitar mostrar secretos en las capturas.
+Las pruebas se realizaron manteniendo consultas HTTP periódicas y observando
+las tareas del servicio `web-f1-g3`.
 
-### Balanceo y escalado
+### E1 — Balanceo de carga
+
+Se realizaron consultas repetidas a `/estado.php`. Las respuestas mostraron
+distintos hostnames, demostrando que el routing mesh distribuye el tráfico
+entre contenedores del servicio.
+
+### E2 — Escalado
+
+El servicio se escaló a 8, 12 y 2 réplicas y posteriormente se restauró a 4:
 
 ```bash
-for i in {1..30}; do
-  date
-  curl -fsS --max-time 3 http://<IP_PUBLICA_NODO>/estado.php
-  echo
-  sleep 1
-done
-
 docker service scale web-f1-g3=8
-docker service ps web-f1-g3
 docker service scale web-f1-g3=12
-docker service ps web-f1-g3
 docker service scale web-f1-g3=2
-docker service ps web-f1-g3
+docker service scale web-f1-g3=4
 ```
 
-### Autorreparación
+En cada etapa se comprobó la convergencia con `docker service ps` y la
+continuidad de las respuestas HTTP.
 
-En un worker, identificar un contenedor de la tarea y eliminarlo; observar cómo
-Swarm lo reemplaza. No eliminar contenedores ajenos al servicio.
+### E3 — Autorreparación
+
+Se eliminó manualmente un contenedor perteneciente al servicio. Swarm detectó
+que faltaba una tarea y creó automáticamente un contenedor de reemplazo hasta
+volver al número deseado de réplicas.
+
+### E4 — Alta disponibilidad ante caída de un worker
+
+Se detuvo `worker1-g3` desde AWS. El nodo pasó a estado no disponible, pero el
+servicio continuó respondiendo mediante las tareas de los demás nodos.
+
+### E5 — Reincorporación y reequilibrio
+
+Se volvió a iniciar `worker1-g3`, se esperó a que regresara a estado `Ready` y
+se forzó una actualización del servicio para favorecer el reequilibrio:
 
 ```bash
-docker ps
-docker rm -f <ID_CONTENEDOR_DE_WEB-F1-G3>
-docker service ps web-f1-g3
+docker service update --force web-f1-g3
 ```
 
-### Caída y reincorporación de worker
+### E6 — Mantenimiento con `drain`
 
-Detener una instancia worker desde AWS, comprobar que la web sigue respondiendo
-y registrar la reubicación de tareas. Después volver a iniciar la instancia y
-verificar `docker node ls` y `docker service ps`.
-
-### Mantenimiento
+El nodo se puso temporalmente en mantenimiento:
 
 ```bash
 docker node update --availability drain worker1-g3
@@ -231,42 +300,70 @@ docker service ps web-f1-g3
 docker node update --availability active worker1-g3
 ```
 
-### Actualización y rollback
+Las tareas se reubicaron y la aplicación siguió disponible. Después el nodo
+volvió a `Active`.
 
-Desplegar 1.0, mantener una consulta HTTP continua, actualizar a 2.0 y observar
-que no haya respuestas fallidas. Para probar el rollback solicitado por la
-rúbrica, ejecutar desde el manager después de la actualización:
+### E7 — Actualización y rollback
+
+Se actualizó el servicio de la versión 1.0 a la 2.0 mientras se realizaban
+consultas HTTP. La política `start-first` permitió iniciar la tarea nueva antes
+de detener la anterior. Después se ejecutó el rollback y finalmente se restauró
+la versión 2.0.
 
 ```bash
 docker service rollback web-f1-g3
 docker service ps web-f1-g3
-curl -sS http://<IP_PUBLICA_NODO>/estado.php
+curl -sS http://<IP_PUBLICA_DE_UN_NODO>/estado.php
 ```
 
-Confirmar la imagen/versión que queda activa. Un rollback cambia la configuración
-del servicio, no destruye instancias.
+No se observaron cortes HTTP durante la actualización ni el rollback.
 
-### Alta disponibilidad de managers
+### E8 — Alta disponibilidad de managers
 
-Promover dos workers, comprobar que hay tres managers (quórum), apagar el líder
-original desde AWS y verificar que otro manager mantiene el control. Reiniciar
-el nodo después de la prueba y registrar el estado final.
+Se promovieron dos workers:
 
 ```bash
 docker node promote worker1-g3 worker2-g3
 docker node ls
 ```
 
-**Evidencias por añadir para cada prueba:** capturas antes/durante/después con
-prompt del hostname, fecha/hora, comentario de prueba/resultado/autor y ninguna
-credencial/token/clave privada. [PENDIENTE: ejecutar y documentar cada prueba
-E1–E8.]
+Con tres managers se mantuvo el quórum. Tras la caída del líder original,
+`worker1-g3` fue elegido nuevo líder y `worker2-g3` permaneció como manager
+alcanzable. La web continuó operativa. El manager original se reincorporó
+posteriormente al clúster.
 
-## 8. Seguridad y entrega
+**Evidencias que deben incorporarse para E1–E8:**
 
-- No versionar claves privadas, tokens, credenciales AWS, `terraform.tfstate` ni
-  backups del estado. Revisar `.gitignore` antes de cada commit.
-- Restringir SSH al CIDR del aula/alumno; los puertos de Swarm solo deben estar
-  permitidos entre nodos.
-- No afirmar una prueba como completada sin resultado y captura verificables.
-- [PENDIENTE] Completar `GESTION.md`, `practica-individual/` y las capturas.
+- Captura inicial, durante la prueba y resultado final de cada ejercicio.
+- Prompt con hostname, fecha y hora.
+- Comentario con prueba, resultado y autor.
+- Ningún token, contraseña, credencial AWS o clave privada.
+
+## 8. Validaciones del código
+
+Antes de entregar se comprobaron los scripts y la configuración:
+
+```bash
+bash -n scripts/publicar-web.sh scripts/desplegar-web.sh
+terraform -chdir=terraform fmt -check
+terraform -chdir=terraform validate
+git diff --check
+```
+
+Las comprobaciones de sintaxis, formato y validación de Terraform fueron
+correctas.
+
+## 9. Seguridad y entrega
+
+- Las claves privadas y credenciales no se incluyen en el repositorio.
+- Los archivos `terraform.tfstate` y sus copias están excluidos por
+  [`.gitignore`](.gitignore).
+- Las claves públicas del equipo se encuentran en `terraform/keys/`.
+- Los tokens de Docker Hub y de unión de Swarm deben introducirse solo de forma
+  interactiva y no deben aparecer en capturas.
+- Antes de entregar hay que revisar las reglas SSH y usar únicamente el rango
+  autorizado por el aula o el equipo.
+
+La documentación de gestión del equipo está en [`GESTION.md`](GESTION.md) y la
+memoria individual en
+[`practica-individual/README.md`](practica-individual/README.md).

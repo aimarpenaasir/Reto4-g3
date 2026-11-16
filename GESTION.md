@@ -33,8 +33,3 @@ Docker Swarm y desplegar una aplicación versionada. Las pruebas de escalado,
 autorreparación, caída de un worker, mantenimiento, actualización y elección
 de un nuevo manager ayudaron a verificar la tolerancia a fallos y la alta
 disponibilidad.
-
-Como mejora, el trabajo debería repartirse desde el principio entre todos los
-integrantes, utilizando ramas y Pull Requests para que las contribuciones
-queden registradas. También sería conveniente preparar desde el inicio una
-lista de evidencias con capturas, fechas, autores y resultados de cada prueba.

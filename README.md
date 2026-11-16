@@ -1,83 +1,158 @@
-# CLOUD Reto 4 — F1 Bilbao en Docker Swarm
+# CLOUD Reto 4 · F1 Bilbao en AWS y Docker Swarm
 
-Proyecto académico para desplegar una web del evento F1 Bilbao en cuatro
-instancias EC2 de AWS, aprovisionadas con Terraform y organizadas como un
-clúster Docker Swarm. La arquitectura consta de un manager y tres workers; el
-servicio web se publica por HTTP en el puerto 80 y usa cuatro réplicas.
+Proyecto académico para desplegar una web temática de Fórmula 1 en un clúster
+Docker Swarm sobre AWS. La infraestructura se define con Terraform, las
+imágenes se publican en Docker Hub y el servicio web se ejecuta con cuatro
+réplicas para ofrecer balanceo y tolerancia a fallos.
 
-## Fases del proyecto
+## Resumen
 
-- **Fase 0 — Entorno colaborativo:** GitHub, Codespace y herramientas de
-  Terraform/AWS CLI en `.devcontainer/`.
-- **Fase 1 — Infraestructura:** configuración de EC2, reglas de red, claves
-  públicas, arranque y outputs en `terraform/`.
-- **Fase 2 — Acceso remoto:** SSH a los nodos y salto a workers desde el manager.
-- **Fase 3 — Docker Swarm:** manager, workers y red ingress overlay del grupo.
-- **Fase 4 — Web:** imágenes versionadas, publicación en Docker Hub y servicio de
-  cuatro réplicas.
-- **Fase 5 — Pruebas:** balanceo, escalado, recuperación, mantenimiento,
-  actualizaciones y alta disponibilidad.
+La arquitectura utiliza cuatro instancias EC2 en `us-east-1`:
 
-## Estructura principal
+- `manager-g3`: manager principal, `t3.medium` y disco de 20 GB.
+- `worker1-g3`, `worker2-g3` y `worker3-g3`: workers, `t3.small` y discos de
+  10 GB.
 
-- `terraform/`: infraestructura AWS como código.
-- `app/`: web, Dockerfile y páginas específicas de las versiones `1.0` y `2.0`.
-- `scripts/`: publicación de imágenes y despliegue del servicio Swarm.
-- `.devcontainer/`: definición del entorno de Codespaces.
-- `config/`: plantilla de configuración SSH.
-- `diagramas/`: diagrama de arquitectura.
-- `evidencias/`: capturas comentadas de las pruebas.
-- `PROYECTO.md`: procedimiento técnico y evidencias pendientes de adjuntar.
-- `GESTION.md`: plantilla de reparto de tareas del equipo.
-- `practica-individual/`: plantilla para documentar la práctica individual.
+El servicio `web-f1-g3` se publica mediante el puerto HTTP `80` en todos los
+nodos. La red `red-g3` es la red ingress overlay de Swarm y está configurada
+con MTU 1450. La aplicación dispone de las versiones `1.0` y `2.0`; el
+endpoint `/estado.php` muestra la versión y el hostname del contenedor que
+responde.
 
+## Objetivos demostrados
 
-## Despliegue rápido de la web
+- Aprovisionamiento reproducible de AWS con Terraform.
+- Acceso SSH mediante alias y `ProxyJump` hacia los workers.
+- Formación y administración de un clúster Docker Swarm.
+- Balanceo de peticiones entre réplicas.
+- Escalado, autorreparación y reubicación de tareas.
+- Mantenimiento `drain` de nodos.
+- Actualización de la aplicación y rollback.
+- Alta disponibilidad mediante varios managers.
 
-Requisitos: Docker disponible en WSL, acceso a Docker Hub, clúster Swarm activo
-con manager `manager-g3` y red ingress `red-g3`. Los comandos siguientes usan el
-grupo 3; adapta el número y los nombres si el grupo cambia.
+## Estructura del repositorio
 
-1. Desde la raíz del repositorio, inicia sesión y publica la imagen que quieras:
+| Ruta | Contenido |
+|---|---|
+| [`terraform/`](terraform/) | Infraestructura AWS, Security Group, outputs, claves públicas y `user_data`. |
+| [`app/`](app/) | Código de la web, Dockerfile y contenidos de las versiones `1.0` y `2.0`. |
+| [`scripts/`](scripts/) | Scripts para publicar imágenes y desplegar el servicio Swarm. |
+| [`.devcontainer/`](.devcontainer/) | Configuración del Codespace con AWS CLI y Terraform. |
+| [`config/`](config/) | Plantilla de configuración SSH. |
+| [`diagramas/`](diagramas/) | Diagrama de la arquitectura. |
+| [`evidencias/`](evidencias/) | Capturas y evidencias de las pruebas. |
+| [`PROYECTO.md`](PROYECTO.md) | Memoria técnica y procedimiento de las fases. |
+| [`GESTION.md`](GESTION.md) | Reparto de tareas y reflexión del equipo. |
+| [`practica-individual/`](practica-individual/) | Memoria de la práctica individual. |
 
-   ```bash
-   docker login --username aimar06
-   bash scripts/publicar-web.sh aimar06 1.0
-   # Para publicar la versión 2.0:
-   bash scripts/publicar-web.sh aimar06 2.0
-   ```
+## Requisitos
 
-   Docker solicita la contraseña o el token de forma interactiva. No incluyas
-   credenciales en comandos, archivos del repositorio ni capturas.
+- Cuenta o laboratorio AWS activo en `us-east-1`.
+- AWS CLI y Terraform.
+- Docker y acceso a Docker Hub.
+- Clave privada SSH correspondiente al acceso configurado.
+- Cuatro instancias desplegadas y un clúster Swarm inicializado.
 
-2. Copia el script al manager y conéctate:
+No guardes credenciales, tokens, claves privadas ni archivos de estado de
+Terraform en el repositorio. Antes de aplicar Terraform, configura un rango
+SSH restringido al aula o al equipo.
 
-   ```bash
-   scp scripts/desplegar-web.sh manager-g3:/tmp/desplegar-web.sh
-   ssh manager-g3
-   ```
+## Despliegue rápido
 
-3. En el manager, despliega o actualiza el servicio:
+### 1. Crear la infraestructura
 
-   ```bash
-   docker login --username aimar06
-   DOCKERHUB_USER=aimar06 bash /tmp/desplegar-web.sh 3 1.0
-   # Para actualizar a 2.0:
-   DOCKERHUB_USER=aimar06 bash /tmp/desplegar-web.sh 3 2.0
-   ```
+Desde la raíz del repositorio:
 
-4. Comprueba las réplicas y la versión servida:
+```bash
+cd terraform
+terraform init
+terraform fmt -check
+terraform validate
+terraform plan
+terraform apply
+terraform output
+```
 
-   ```bash
-   docker service ls
-   docker service ps web-f1-g3
-   curl -sS http://IP_PUBLICA_DE_UN_NODO/estado.php
-   ```
+Los outputs muestran las IP públicas y privadas de los nodos. Las IP públicas
+pueden cambiar cuando las instancias se detienen y vuelven a iniciarse.
 
-   Espera a que el servicio muestre `4/4` réplicas y las tareas estén en estado
-   `Running`. La página está disponible en `http://IP_PUBLICA_DE_CUALQUIER_NODO`.
+### 2. Configurar el acceso SSH
+
+Copia [`config/ssh_config.example`](config/ssh_config.example) a
+`~/.ssh/config`, sustituye las IP actuales y la ruta de tu clave privada, y
+aplica los permisos adecuados:
+
+```bash
+chmod 600 ~/.ssh/config
+ssh manager-g3
+ssh worker1-g3
+```
+
+Los workers se acceden mediante `ProxyJump` y sus IP privadas. No copies la
+clave privada al repositorio.
+
+### 3. Publicar las imágenes
+
+Desde la raíz del proyecto:
+
+```bash
+docker login --username aimar06
+bash scripts/publicar-web.sh aimar06 1.0
+bash scripts/publicar-web.sh aimar06 2.0
+```
+
+El inicio de sesión solicita las credenciales de forma interactiva.
+
+### 4. Desplegar la web
+
+Copia el script al manager y ejecútalo allí:
+
+```bash
+scp scripts/desplegar-web.sh manager-g3:/tmp/desplegar-web.sh
+ssh manager-g3
+DOCKERHUB_USER=aimar06 bash /tmp/desplegar-web.sh 3 1.0
+```
+
+Para actualizar a la versión 2.0:
+
+```bash
+DOCKERHUB_USER=aimar06 bash /tmp/desplegar-web.sh 3 2.0
+```
+
+El script comprueba que el nodo sea un manager activo, valida la red ingress y
+crea o actualiza el servicio con cuatro réplicas, reinicio automático,
+actualización `start-first` y rollback ante fallos.
+
+### 5. Verificar el despliegue
+
+Desde el manager:
+
+```bash
+docker node ls
+docker service ls
+docker service ps web-f1-g3
+curl -sS http://127.0.0.1/estado.php
+```
+
+La web queda disponible en:
+
+```text
+http://IP_PUBLICA_DE_CUALQUIER_NODO/
+http://IP_PUBLICA_DE_CUALQUIER_NODO/estado.php
+```
+
+El servicio debe mostrar `4/4` réplicas y las tareas deben aparecer en estado
+`Running`.
+
+## Documentación
+
+La descripción detallada de la infraestructura, el acceso remoto y las pruebas
+de orquestación está en [`PROYECTO.md`](PROYECTO.md). Las evidencias deben
+mostrar el hostname, fecha y hora, prueba realizada, resultado y autor, sin
+incluir secretos.
 
 ## Enlaces
 
 - [Repositorio GitHub](https://github.com/aimarpenaasir/Reto4-g3)
-- [Imágenes F1 Bilbao en Docker Hub](https://hub.docker.com/r/aimar06/f1-bilbao)
+- [Imágenes en Docker Hub](https://hub.docker.com/r/aimar06/f1-bilbao)
+- [Diagrama de arquitectura](diagramas/arquitectura.md)
