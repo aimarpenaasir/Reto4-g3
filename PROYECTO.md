@@ -114,7 +114,7 @@ un Security Group compartido y outputs con las IPs públicas y privadas.
 
 - **Variables de Terraform:** [captura](evidencias/image-3.png).
 - **Script de arranque:** [captura](evidencias/image-4.png).
-- **Inicialización, validación, plan, apply y outputs:** [captura](evidencias/image-5.png).
+- **Outputs de Terraform:** [captura](evidencias/image-5.png).
 - **Security Group y reglas de red:** [captura](evidencias/image-6.png).
 - **Cuatro instancias EC2:** [captura](evidencias/image-7.png).
 
