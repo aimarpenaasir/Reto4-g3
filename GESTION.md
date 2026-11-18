@@ -29,11 +29,21 @@ que no hayan realizado.
 - Control de versiones: Git y GitHub.
 - Entorno principal: GitHub Codespaces.
 - Evidencias técnicas: capturas, comandos y resultados documentados.
-- Pull Requests: no hay Pull Requests registrados actualmente.
 - Invitación del profesor: pendiente de comprobar antes de la entrega.
 
 Las contribuciones deben quedar respaldadas mediante commits o Pull Requests.
 Los comentarios, capturas y revisiones deben indicar el nombre del autor.
+
+## Pull Requests
+
+- [PR #1 — Documentacion final](https://github.com/aimarpenaasir/Reto4-g3/pull/1):
+  incorporó la documentación técnica y la organización del proyecto.
+- [PR #2 — Actualizacion de gestion](https://github.com/aimarpenaasir/Reto4-g3/pull/2):
+  incorporó el nuevo reparto y la gestión del equipo.
+
+Ambos Pull Requests aparecen como cerrados porque fueron **fusionados**
+(`Merged`) en la rama `main`. La función de este apartado es dejar constancia
+de los cambios integrados y de su trazabilidad en GitHub.
 
 ## Dificultades
 
