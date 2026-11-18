@@ -1,35 +1,55 @@
 # Gestión del equipo
 
-## Reparto de tareas
+## Responsables
 
-El reparto se documenta según el trabajo realizado realmente, sin atribuir
-tareas no ejecutadas a otros integrantes.
+| Responsable | Tareas realizadas |
+|---|---|
+| **Aimar** | Infraestructura con Terraform, configuración de los nodos, Docker Swarm, imágenes Docker, despliegue web, pruebas de orquestación y documentación técnica. |
+| **Iker, Aritz, Eder e Ian** | No existe constancia registrada de tareas realizadas en el repositorio. |
 
-| Integrante | Tareas realizadas | Evidencia |
+Las tareas se asignan únicamente cuando hay evidencia verificable. Los
+integrantes sin actividad registrada no deben aparecer como autores de trabajos
+que no hayan realizado.
+
+## Reparto por fases
+
+| Fase | Responsable principal | Resultado |
 |---|---|---|
-| Iker | No realizó tareas registradas en este proyecto. | Sin commits, PRs o capturas atribuidas. |
-| Aritz | No realizó tareas registradas en este proyecto. | Sin commits, PRs o capturas atribuidas. |
-| Eder | No realizó tareas registradas en este proyecto. | Sin commits, PRs o capturas atribuidas. |
-| Ian | No realizó tareas registradas en este proyecto. | Sin commits, PRs o capturas atribuidas. |
-| Aimar | Implementación técnica, Terraform, Docker Swarm, aplicación web, pruebas de orquestación y documentación. | Commits del repositorio, código de `terraform/`, `app/`, `scripts/` y documentación. |
+| Entorno colaborativo y GitHub | Aimar | Repositorio privado y entorno de desarrollo preparado. |
+| Infraestructura AWS con Terraform | Aimar | Manager y tres workers definidos y desplegados. |
+| Acceso SSH | Aimar | Alias SSH, claves públicas y salto mediante el manager configurados. |
+| Clúster Docker Swarm | Aimar | Nodos unidos, red ingress creada y servicio desplegado. |
+| Publicación y despliegue web | Aimar | Imágenes `1.0` y `2.0` publicadas y servicio activo. |
+| Pruebas de orquestación | Aimar | Evidencias E1–E8 realizadas y pendientes de incorporar. |
+| Documentación | Aimar | README, informe técnico y memoria individual preparados. |
 
-## Colaboración
+## Coordinación
 
-- **Repositorio:** [Reto4-g3](https://github.com/aimarpenaasir/Reto4-g3).
-- **Coordinación:** el trabajo se gestionó mediante GitHub y el repositorio
-  compartido.
-- **Pull requests:** no hay Pull Requests registrados en el repositorio.
-- **Profesor:** debe comprobarse que el profesor está invitado al repositorio
-  antes de la entrega.
-- **Dificultades:** las principales dificultades fueron configurar la red
-  ingress de Swarm, mantener el acceso a los workers mediante sus IP privadas y
-  documentar las pruebas de fallo y recuperación.
+- Repositorio: [Reto4-g3](https://github.com/aimarpenaasir/Reto4-g3).
+- Control de versiones: Git y GitHub.
+- Entorno principal: GitHub Codespaces.
+- Evidencias técnicas: capturas, comandos y resultados documentados.
+- Pull Requests: no hay Pull Requests registrados actualmente.
+- Invitación del profesor: pendiente de comprobar antes de la entrega.
 
-## Reflexión
+Las contribuciones deben quedar respaldadas mediante commits o Pull Requests.
+Los comentarios, capturas y revisiones deben indicar el nombre del autor.
 
-La práctica permitió comprobar el ciclo completo de infraestructura como código:
-crear las instancias con Terraform, configurar los nodos, formar el clúster
-Docker Swarm y desplegar una aplicación versionada. Las pruebas de escalado,
-autorreparación, caída de un worker, mantenimiento, actualización y elección
-de un nuevo manager ayudaron a verificar la tolerancia a fallos y la alta
-disponibilidad.
+## Dificultades
+
+Durante el proyecto fue necesario resolver la conexión con AWS, adaptar la
+configuración de Terraform, preparar el arranque de los nodos, unirlos al
+clúster y configurar correctamente la red ingress de Swarm. También fue
+necesario coordinar las IP públicas cambiantes y el acceso privado de los
+workers mediante el manager.
+
+## Reflexión breve
+
+El proyecto permitió aprender a convertir una infraestructura manual en
+infraestructura como código y a administrar una aplicación distribuida.
+Docker Swarm mostró su utilidad para balancear el tráfico, recuperar tareas,
+reubicar contenedores y mantener el servicio disponible durante fallos y
+actualizaciones.
+
+Como mejora, sería conveniente repartir las tareas desde el inicio y registrar
+el trabajo de cada integrante mediante commits, ramas y Pull Requests.
