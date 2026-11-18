@@ -48,11 +48,11 @@ versionan las claves privadas, los estados de Terraform ni las credenciales.
 **Resultado:** repositorio privado creado, entorno de Codespace definido y
 herramientas de administración declaradas.
 
-**Evidencias que deben incorporarse:**
+**Evidencias:**
 
-- Captura del Codespace mostrando AWS CLI y Terraform disponibles.
-- Captura de la configuración de privacidad y colaboradores del repositorio.
-- Captura del historial de commits y, si existen, Pull Requests.
+- **Creación del repositorio:** [captura](evidencias/image.png).
+- **Codespace con AWS CLI y Terraform:** [captura](evidencias/image-1.png).
+- **Trabajo colaborativo en GitHub:** [captura](evidencias/image-2.png).
 
 ## 3. Fase 1 — Infraestructura con Terraform
 
@@ -110,12 +110,13 @@ La configuración pasó `terraform fmt -check` y `terraform validate`. El
 resultado esperado y obtenido es una infraestructura con cuatro instancias,
 un Security Group compartido y outputs con las IPs públicas y privadas.
 
-**Evidencias que deben incorporarse:**
+**Evidencias:**
 
-- `terraform validate`, `plan`, `apply` y `output`.
-- Consola EC2 mostrando los cuatro nodos.
-- Security Group y sus reglas.
-- Logs de `user_data` o comprobaciones de hostname, zona horaria, Docker y SSH.
+- **Variables de Terraform:** [captura](evidencias/image-3.png).
+- **Script de arranque:** [captura](evidencias/image-4.png).
+- **Inicialización, validación, plan, apply y outputs:** [captura](evidencias/image-5.png).
+- **Security Group y reglas de red:** [captura](evidencias/image-6.png).
+- **Cuatro instancias EC2:** [captura](evidencias/image-7.png).
 
 ## 4. Fase 2 — Acceso remoto por SSH
 
@@ -146,12 +147,12 @@ exponerlas a Internet.
 administrarse a través del manager. El acceso root y por contraseña quedan
 deshabilitados por `user_data.sh`.
 
-**Evidencias que deben incorporarse:**
+**Evidencias:**
 
-- Conexión al manager mediante alias.
-- Conexión a un worker mediante `ProxyJump`.
-- Comprobación de hostname y fecha/hora en cada nodo.
-- Comprobación de las restricciones de SSH sin mostrar claves privadas.
+- **Conexión SSH al manager mediante alias:** [captura](evidencias/image-8.png).
+- **Conexión SSH a los workers mediante `ProxyJump`:**
+  [captura 1](evidencias/image-9.png), [captura 2](evidencias/image-10.png) y
+  [captura 3](evidencias/image-11.png).
 
 ## 5. Fase 3 — Clúster Docker Swarm
 
@@ -180,12 +181,12 @@ ingress `red-g3` se utilizó para publicar el servicio. Durante las pruebas de
 alta disponibilidad se configuraron tres managers: `manager-g3`,
 `worker1-g3` y `worker2-g3`.
 
-**Evidencias que deben incorporarse:**
+**Evidencias:**
 
-- `docker node ls` con los cuatro nodos `Ready`.
-- Inspección de `red-g3` con `Ingress=true`, driver overlay y MTU 1450.
-- Pruebas de conectividad entre nodos mediante IP privada.
-- Estado del clúster con los tres managers.
+- **Cuatro nodos en el clúster:** [captura](evidencias/image-12.png).
+- **Configuración de la red del grupo:** [captura](evidencias/image-13.png).
+- **MTU 1450:** [captura](evidencias/image-14.png).
+- **Red ingress:** [captura](evidencias/image-15.png).
 
 ## 6. Fase 4 — Publicación y despliegue de la web
 
@@ -236,13 +237,14 @@ curl -i http://<IP_PUBLICA_DE_UN_NODO>/estado.php
 servicio quedó operativo con cuatro réplicas y la aplicación respondió con
 `HTTP 200` desde las IPs públicas de los nodos.
 
-**Evidencias que deben incorporarse:**
+**Evidencias:**
 
-- Docker Hub con las etiquetas `1.0` y `2.0`.
-- `docker service ls` mostrando `4/4`.
-- `docker service ps` con las tareas en ejecución.
-- Respuestas de `/estado.php` con versiones y hostnames.
-- Acceso HTTP desde cada IP pública.
+- **Imágenes `1.0` y `2.0` en Docker Hub:** [captura](evidencias/image-16.png).
+- **Respuesta de `/estado.php`:** [captura](evidencias/image-17.png).
+- **Acceso HTTP desde el manager:** [captura](evidencias/image-18.png).
+- **Acceso HTTP desde `worker1-g3`:** [captura](evidencias/image-19.png).
+- **Acceso HTTP desde `worker2-g3`:** [captura](evidencias/image-20.png).
+- **Acceso HTTP desde `worker3-g3`:** [captura](evidencias/image-21.png).
 
 ## 7. Fase 5 — Pruebas de orquestación
 
@@ -254,6 +256,8 @@ las tareas del servicio `web-f1-g3`.
 Se realizaron consultas repetidas a `/estado.php`. Las respuestas mostraron
 distintos hostnames, demostrando que el routing mesh distribuye el tráfico
 entre contenedores del servicio.
+
+**Evidencia:** [consultas atendidas por distintos contenedores](evidencias/image-22.png).
 
 ### E2 — Escalado
 
@@ -269,16 +273,25 @@ docker service scale web-f1-g3=4
 En cada etapa se comprobó la convergencia con `docker service ps` y la
 continuidad de las respuestas HTTP.
 
+**Evidencias:** escalado a [8 réplicas](evidencias/image-23.png), [12 réplicas](evidencias/image-24.png)
+y [2 réplicas](evidencias/image-25.png).
+
 ### E3 — Autorreparación
 
 Se eliminó manualmente un contenedor perteneciente al servicio. Swarm detectó
 que faltaba una tarea y creó automáticamente un contenedor de reemplazo hasta
 volver al número deseado de réplicas.
 
+**Evidencias:** estado [antes](evidencias/image-26.png), [eliminación](evidencias/image-27.png)
+y estado [después de la autorreparación](evidencias/image-28.png).
+
 ### E4 — Alta disponibilidad ante caída de un worker
 
 Se detuvo `worker1-g3` desde AWS. El nodo pasó a estado no disponible, pero el
 servicio continuó respondiendo mediante las tareas de los demás nodos.
+
+**Evidencias:** estado [antes de la caída](evidencias/image-29.png) y respuesta
+`HTTP 200` [durante la caída](evidencias/image-30.png).
 
 ### E5 — Reincorporación y reequilibrio
 
@@ -288,6 +301,8 @@ se forzó una actualización del servicio para favorecer el reequilibrio:
 ```bash
 docker service update --force web-f1-g3
 ```
+
+**Evidencia:** [reincorporación y reequilibrio](evidencias/image-31.png).
 
 ### E6 — Mantenimiento con `drain`
 
@@ -302,6 +317,10 @@ docker node update --availability active worker1-g3
 
 Las tareas se reubicaron y la aplicación siguió disponible. Después el nodo
 volvió a `Active`.
+
+**Evidencias:** nodo en [modo `drain`](evidencias/image-32.png), servicio
+[convergido](evidencias/image-33.png) y nodo restaurado a
+[`Active`](evidencias/image-34.png).
 
 ### E7 — Actualización y rollback
 
@@ -318,6 +337,10 @@ curl -sS http://<IP_PUBLICA_DE_UN_NODO>/estado.php
 
 No se observaron cortes HTTP durante la actualización ni el rollback.
 
+**Evidencias:** despliegue de la [versión 1.0](evidencias/image-35.png),
+consultas durante el cambio [1.0 a 2.0](evidencias/image-36.png), comando de
+[actualización](evidencias/image-37.png) y [rollback](evidencias/image-38.png).
+
 ### E8 — Alta disponibilidad de managers
 
 Se promovieron dos workers:
@@ -332,12 +355,13 @@ Con tres managers se mantuvo el quórum. Tras la caída del líder original,
 alcanzable. La web continuó operativa. El manager original se reincorporó
 posteriormente al clúster.
 
-**Evidencias que deben incorporarse para E1–E8:**
+**Evidencias:** [promoción de dos workers a managers](evidencias/image-39.png),
+[roles del clúster](evidencias/image-40.png) y [nuevo líder tras la caída del
+líder original](evidencias/image-41.png).
 
-- Captura inicial, durante la prueba y resultado final de cada ejercicio.
-- Prompt con hostname, fecha y hora.
-- Comentario con prueba, resultado y autor.
-- Ningún token, contraseña, credencial AWS o clave privada.
+Todas las capturas anteriores deben conservar el prompt con hostname, fecha y
+hora, además del comentario de prueba, resultado y autor. No deben incluir
+tokens, contraseñas, credenciales AWS ni claves privadas.
 
 ## 8. Validaciones del código
 
